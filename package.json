@@ -1,0 +1,27 @@
+{
+  "name": "reddit-image-downloader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-user": "node src/download_user_images.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KennyTheBard/reddit-image-downloader.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KennyTheBard/reddit-image-downloader/issues"
+  },
+  "homepage": "https://github.com/KennyTheBard/reddit-image-downloader#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "image-hash": "^4.0.1",
+    "node-fetch": "^2.6.1",
+    "node-image-hash": "^1.1.0",
+    "nraw": "^0.2.5"
+  }
+}
