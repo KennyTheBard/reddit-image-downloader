@@ -20,33 +20,38 @@ const getFileType = (url) => {
 const Reddit = new r('downloadbot');
 
 const downloadRedditPosts = async (res, dirName, resolve) => {
-   const uniqueUrls = res.data.children
-      .map(c => c.data.url ? c.data.url : c.data.link_url)
-      .filter(c => c !== undefined)
-      .filter(c => c.indexOf('.jpg') > -1)
-      .sort()
-      .filter((x, i, array) => i === array.indexOf(x));
+   try {
 
-   const hashes = [];
-   for (const url of uniqueUrls) {
-      const buffer = await download(url);
+      const uniqueUrls = res.data.children
+         .map(c => c.data.url ? c.data.url : c.data.link_url)
+         .filter(c => c !== undefined)
+         .filter(c => c.indexOf('.jpg') > -1)
+         .sort()
+         .filter((x, i, array) => i === array.indexOf(x));
 
-      const hash = (await imageHash.syncHash(buffer)).hash;
-      if (hashes.indexOf(hash) > -1) {
-         continue;
+      const hashes = [];
+      for (const url of uniqueUrls) {
+         const buffer = await download(url);
+
+         const hash = (await imageHash.syncHash(buffer)).hash;
+         if (hashes.indexOf(hash) > -1) {
+            continue;
+         }
+
+         hashes.push(hash);
+         const fileName = `${uuid()}.${getFileType(url)}`;
+         fs.writeFileSync(`${dirName}/${fileName}`, buffer);
+         console.log(`Saved ${fileName}`)
       }
 
-      hashes.push(hash);
-      const fileName = `${uuid()}.${getFileType(url)}`;
-      fs.writeFileSync(`${dirName}/${fileName}`, buffer);
-      console.log(`Saved ${fileName}`)
-   }
-
-   const oldestPost = res.data.children[res.data.children.length - 1];
-   if (oldestPost !== undefined) {
-      resolve(oldestPost.data.name);
-   } else {
-      resolve(undefined)
+      const oldestPost = res.data.children[res.data.children.length - 1];
+      if (oldestPost !== undefined) {
+         resolve(oldestPost.data.name);
+      } else {
+         resolve(undefined)
+      }
+   } catch (err) {
+      console.log("Empty data")
    }
 }
 
@@ -57,7 +62,7 @@ const downloadRedditUserPostsAfter = async (username, dirName, after) => {
    }
 
    return new Promise((resolve, reject) => {
-      userQuery.limit(100).exec((res) => {         
+      userQuery.limit(100).exec((res) => {
          downloadRedditPosts(res, dirName, resolve);
       });
    });
@@ -72,7 +77,6 @@ const downloadRedditUserPosts = async (username) => {
    let after = undefined;
    while (true) {
       after = await downloadRedditUserPostsAfter(username, dirName, after);
-      console.log(`After: ${after}`);
 
       if (after === undefined) {
          break;
@@ -80,6 +84,9 @@ const downloadRedditUserPosts = async (username) => {
    }
 }
 
-process.argv.slice(2).forEach(username => downloadRedditUserPosts(username));
+(async () => {
+   const users = process.argv.slice(2);
+   await Promise.all(users.map(username => downloadRedditUserPosts(username)));
 
+})();
 
