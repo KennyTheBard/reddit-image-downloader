@@ -19,7 +19,7 @@ const getFileType = (url) => {
 
 const Reddit = new r('downloadbot');
 
-const downloadRedditPosts = async (res, dirName, resolve) => {
+const downloadRedditPosts = async (res, dirName, resolve, hashes) => {
    try {
 
       const uniqueUrls = res.data.children
@@ -29,7 +29,6 @@ const downloadRedditPosts = async (res, dirName, resolve) => {
          .sort()
          .filter((x, i, array) => i === array.indexOf(x));
 
-      const hashes = [];
       for (const url of uniqueUrls) {
          const buffer = await download(url);
 
@@ -55,7 +54,7 @@ const downloadRedditPosts = async (res, dirName, resolve) => {
    }
 }
 
-const downloadRedditUserPostsAfter = async (username, dirName, after) => {
+const downloadRedditUserPostsAfter = async (username, dirName, after, hashes) => {
    let userQuery = Reddit.user(username).sort('new');
    if (after !== undefined) {
       userQuery = userQuery.after(after);
@@ -63,7 +62,7 @@ const downloadRedditUserPostsAfter = async (username, dirName, after) => {
 
    return new Promise((resolve, reject) => {
       userQuery.limit(100).exec((res) => {
-         downloadRedditPosts(res, dirName, resolve);
+         downloadRedditPosts(res, dirName, resolve, hashes);
       });
    });
 }
@@ -75,8 +74,9 @@ const downloadRedditUserPosts = async (username) => {
    fs.mkdirSync(dirName);
 
    let after = undefined;
+   const hashes = [];
    while (true) {
-      after = await downloadRedditUserPostsAfter(username, dirName, after);
+      after = await downloadRedditUserPostsAfter(username, dirName, after, hashes);
 
       if (after === undefined) {
          break;
