@@ -12,25 +12,23 @@ const download = async (url) => {
    return buffer;
 };
 
-const getFileType = (url) => {
-   const parts = url.split('.');
-   return parts[parts.length - 1];
-}
-
 const Reddit = new r('downloadbot');
 
 const downloadRedditPosts = async (res, dirName, resolve, hashes) => {
    try {
+      const posts = res.data.children
+         .map(c => {
+            return {
+               url: c.data.url ? c.data.url : c.data.link_url,
+               created: c.data.created,
+               title: c.data.title
+            }
+         })
+         .filter(c => c.url !== undefined)
+         .filter(c => c.url.indexOf('.jpg') > -1);
 
-      const uniqueUrls = res.data.children
-         .map(c => c.data.url ? c.data.url : c.data.link_url)
-         .filter(c => c !== undefined)
-         .filter(c => c.indexOf('.jpg') > -1)
-         .sort()
-         .filter((x, i, array) => i === array.indexOf(x));
-
-      for (const url of uniqueUrls) {
-         const buffer = await download(url);
+      for (const post of posts) {
+         const buffer = await download(post.url);
 
          const hash = (await imageHash.syncHash(buffer)).hash;
          if (hashes.indexOf(hash) > -1) {
@@ -38,12 +36,12 @@ const downloadRedditPosts = async (res, dirName, resolve, hashes) => {
          }
 
          hashes.push(hash);
-         const fileName = `${uuid()}.${getFileType(url)}`;
+         const fileName = `${post.created}.jpg`;
          fs.writeFileSync(`${dirName}/${fileName}`, buffer);
          console.log(`Saved ${fileName}`)
       }
 
-      const oldestPost = res.data.children[res.data.children.length - 1];
+      const oldestPost = posts[posts - 1];
       if (oldestPost !== undefined) {
          resolve(oldestPost.data.name);
       } else {
